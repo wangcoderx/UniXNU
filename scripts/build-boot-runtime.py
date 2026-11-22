@@ -76,7 +76,11 @@ def build_plugin(target):
     fresh = checkout(mesa, pins['mesa'])
     if fresh:
         for patch in pins['patches']:
-            run('git', '-C', mesa, 'apply', ROOT / patch)
+            try:
+                run('git', '-C', mesa, 'apply', ROOT / patch)
+            except subprocess.CalledProcessError:
+                # local: git apply 把补丁里的 /dev/null 解析成相对路径，退回 GNU patch
+                run('patch', '-p1', '-d', str(mesa), '-i', str(ROOT / patch))
     validate_recorded_patches(ROOT, mesa, pins)
     translator = json.loads((ROOT / 'scripts/data/gpu-metal-vulkan-inputs.json').read_text())['translator']
     checkout(ROOT / '.cache/gpu-reference/metal2vulkan', translator)
